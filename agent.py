@@ -8,7 +8,7 @@ from model import DQN
 
 
 class Agent:
-    def __init__(self, size, gamma, tau, memory_size, epsilon_high, epsilon_low, epsilon_decay, lr, batch_size):
+    def __init__(self, size, gamma, n_step, tau, memory_size, epsilon_high, epsilon_low, epsilon_decay, lr, batch_size):
         self.size = size
         self.gamma = gamma
         self.tau = tau
@@ -21,6 +21,7 @@ class Agent:
         self.epsilon = self.epsilon_high
         self.memory = []
         self.steps = 0
+        self.n_step = n_step
         self.eval_model = DQN(self.size)
         self.target_model = dc(self.eval_model)
         self.optimizer = torch.optim.Adam(self.eval_model.parameters(), lr=self.lr)
@@ -39,8 +40,7 @@ class Agent:
 
     def choose_action(self, s):
         self.steps += 1
-        self.epsilon = self.epsilon_low + (self.epsilon_high - self.epsilon_low) * (
-                exp(-1.0 * self.steps) / self.epsilon_decay)
+        self.epsilon = self.epsilon_low + (self.epsilon_high - self.epsilon_low) * exp(-self.epsilon_decay * self.steps)
         if torch.rand(1)[0].item() < self.epsilon:
             action = torch.randint(low=0, high=self.size, size=(1,))[0]
         else:
@@ -60,7 +60,7 @@ class Agent:
         s_ = torch.stack(s_, dim=0)
         d = torch.tensor(d, dtype=torch.float)
 
-        q_next = self.gamma * self.target_model(s_).detach().max(dim=1)[0] * (1 - d) + r
+        q_next = self.gamma ** self.n_step * self.target_model(s_).detach().max(dim=1)[0] * (1 - d) + r
         q_eval = self.eval_model(s).gather(dim=1, index=a).view(-1)
         loss = F.smooth_l1_loss(q_eval, q_next)
 

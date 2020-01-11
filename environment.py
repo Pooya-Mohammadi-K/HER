@@ -3,8 +3,9 @@ from copy import deepcopy as dc
 
 
 class Environment:
-    def __init__(self, size):
+    def __init__(self, size, rewards):
         self.size = size
+        self.rewards = rewards
 
     def reset(self):
         state = torch.randint(low=0, high=2, size=(self.size,), dtype=torch.float)
@@ -19,9 +20,9 @@ class Environment:
         s_[action] = 1 - s_[action]
         dist = (s_[:self.size] - s_[self.size:]).abs().sum().numpy()
         if dist == 0:
-            r = 0
+            r = self.rewards[0]
             done = True
         else:
-            r = -1
+            r = self.rewards[1]
             done = False
         return s_, r, done

@@ -1,12 +1,16 @@
 from copy import deepcopy as dc
+from collections import deque
 import random
+
+import numpy as np
 
 
 class HER:
-    def __init__(self, size):
+    def __init__(self, size, rewards):
         self.size = size
         self.buffer = []
         self.transition_buffer = []
+        self.rewards = rewards
 
     def reset(self):
         self.buffer.clear()
@@ -16,6 +20,10 @@ class HER:
         if type_ == 'future':
             k = kwargs['k']
             self.k_future(k)
+        elif type_ == 'n_step_final':
+            n = kwargs['n']
+            gamma = kwargs['gamma']
+            self.n_step_final(n, gamma)
         else:
             self.final()
         return dc(self.transition_buffer)
@@ -29,12 +37,34 @@ class HER:
             s[self.size:] = target
             dist = (s_[:self.size] - s_[self.size:]).abs().sum()
             if dist == 0:
-                r = 0
+                r = self.rewards[0]
                 d = True
             else:
-                r = -1
+                r = self.rewards[1]
                 d = False
             self.transition_buffer.append([s, a, r, s_, d])
+
+    def n_step_final(self, n, gamma):
+        n_step_buffer = []
+        _, _, _, s_, _ = self.buffer[-1]
+        target = s_[:self.size]
+
+        for transition in self.buffer:
+            s, a, r, s_, d = transition
+            s_[self.size:] = target
+            s[self.size:] = target
+            dist = (s_[:self.size] - s_[self.size:]).abs().sum()
+            if dist == 0:
+                r = self.rewards[0]
+                d = True
+            else:
+                r = self.rewards[1]
+                d = False
+            n_step_buffer.append([s, a, r, s_, d])
+            if len(n_step_buffer) >= n:
+                n_return = np.sum([n_step_buffer[i][2] * (gamma ** i) for i in range(n)])
+                s, a, _, _, _ = n_step_buffer.pop(0)
+                self.transition_buffer.append([s, a, n_return, s_, d])
 
     def k_future(self, k):
         for i, transition in enumerate(self.buffer):
@@ -47,9 +77,9 @@ class HER:
                 s[self.size:] = target
                 dist = (s_[:self.size] - s_[self.size:]).abs().sum()
                 if dist == 0:
-                    r = 0
+                    r = self.rewards[0]
                     d = True
                 else:
-                    r = -1
+                    r = self.rewards[1]
                     d = False
                 self.transition_buffer.append([s, a, r, s_, d])
