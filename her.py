@@ -62,9 +62,28 @@ class HER:
                 d = False
             n_step_buffer.append([s, a, r, s_, d])
             if len(n_step_buffer) >= n:
-                n_return = np.sum([n_step_buffer[i][2] * (gamma ** i) for i in range(n)])
-                s, a, _, _, _ = n_step_buffer.pop(0)
+                n_return, d = self.get_n_return(gamma, n, n_step_buffer)
+                s, a, r, s_, state_d = n_step_buffer.pop(0)
                 self.transition_buffer.append([s, a, n_return, s_, d])
+        while len(n_step_buffer):
+            n_return, _ = self.get_n_return(gamma, n, n_step_buffer)
+            s, a, _, _, _ = n_step_buffer.pop(0)
+            self.transition_buffer.append([s, a, n_return, s_, True])
+
+        v = 10
+
+    @staticmethod
+    def get_n_return(gamma, n, n_step_buffer):
+        n_return = 0
+        done = False
+        for i in range(n):
+            _, _, r_, _, current_d = n_step_buffer[i]
+            if current_d:
+                n_return += r_ * (gamma ** i)
+                done = True
+                break
+            n_return += r_ * (gamma ** i)
+        return n_return, done
 
     def k_future(self, k):
         for i, transition in enumerate(self.buffer):

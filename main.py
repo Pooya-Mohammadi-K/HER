@@ -5,24 +5,24 @@ from agent import Agent
 from her import HER
 from utils import plot, LRScheduler
 
-size = 10
-episodes = 10000
+size = 40
+episodes = 25000
 gamma = 0.9
 tau = 0.005
 memory_size = 100000
 epsilon_high = 0.9
 epsilon_low = 0.05
-epsilon_decay = 0.1
+epsilon_decay = 0.00001
 lr = 0.0005
 batch_size = 32
 moving_coefficient = 0.01
 n_step = 5
-rewards = [1, -1]
+rewards = [1, 0]
 
 # her_parameters = {"type_": 'future', "k": 4 } # k_future
 her_parameters = {"type_": 'n_step_final', "n": n_step, 'gamma': gamma}  # n_step_final
 # her_parameters = {"type_": 'final', }
-lr_scheduler = LRScheduler(episodes=[4000, 6000, 8000], learning_rates=[0.0001, 0.00005, 0.00001], default_lr=lr)
+lr_scheduler = LRScheduler(episodes=[10000, 15000, 20000], learning_rates=[0.0001, 0.00005, 0.00001], default_lr=lr)
 
 if __name__ == '__main__':
     env = Environment(size, rewards)
